@@ -50,18 +50,27 @@
     document.getElementById('msg').innerHTML = 'Abrindo a <b>Conferência de Crossdocking</b>…';
     cover.classList.remove('hide');
     fr.src = APP_URL + (APP_URL.indexOf('?') > -1 ? '&' : '?') + 't=' + Date.now();
+    setTimeout(() => { if (!carregou && navigator.onLine) pronto(); }, 6000);   // garantia: libera após 6 s
     setTimeout(() => { if (!carregou) falhou(); }, 25000);
   }
   function falhou(){
+    if (navigator.onLine && carregou) return;
     document.getElementById('spin').style.display = 'none';
     document.getElementById('msg').innerHTML = 'Não foi possível abrir o app.<br>Verifique a conexão com a internet.<br><button class="btn" onclick="abrir()">Tentar de novo</button>';
     cover.classList.remove('hide');
   }
-  fr.addEventListener('load', () => {
+  function pronto(){
+    if (carregou) return;
     carregou = true;
-    setTimeout(() => cover.classList.add('hide'), 250);
+    cover.classList.add('hide');
     try { fr.focus(); } catch (e) {}
-  });
+  }
+  // 1) o app avisa quando está pronto
+  window.addEventListener('message', e => { if (e.data && e.data.app === 'conferencia-vixlog' && e.data.pronto) pronto(); });
+  // 2) evento de carregamento do navegador (quando disponível)
+  fr.addEventListener('load', () => { setTimeout(pronto, 1500); });
+  // 3) um toque na tela de abertura também libera
+  cover.addEventListener('click', () => { if (navigator.onLine) pronto(); });
   // mantém o foco no app (para o leitor de código de barras)
   window.addEventListener('focus', () => { try { fr.focus(); } catch (e) {} });
 
